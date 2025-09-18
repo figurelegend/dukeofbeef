@@ -2,8 +2,11 @@
 let products = [];
 let orderItems = {};
 
-// Replace with your Google Apps Script Web App URL
+// Replace with your Google Apps Script Web App URLs
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzz7wm_ak0zOuFecSrry0A61Os7Ba0NwiHKFy-GLTQXLGD4BRWi_wCoMvV8t_8DlV3o/exec';
+
+// Orders submission script URL (you'll create and deploy this separately)
+const ORDERS_SCRIPT_URL = 'YOUR_ORDERS_SCRIPT_URL_HERE';
 
 document.addEventListener('DOMContentLoaded', function() {
     emailjs.init("YOUR_EMAILJS_PUBLIC_KEY");
@@ -438,33 +441,94 @@ function submitOrder() {
     const customerEmail = document.getElementById('email').value;
     const customerPhone = document.getElementById('phone').value;
     const deliveryOption = document.getElementById('deliveryOption');
-    const shippingOption = document.getElementById('shippingOption');
+    const deliveryMethod = deliveryOption.checked ? 'delivery' : 'shipping';
 
+    // Prepare order data for Google Apps Script
+    const orderData = {
+        customerName: customerName,
+        customerEmail: customerEmail,
+        customerPhone: customerPhone,
+        deliveryMethod: deliveryMethod,
+        items: []
+    };
+
+    // Add items to order
+    for (let key in orderItems) {
+        const item = orderItems[key];
+        const price = parseFloat(item.product.retail) || 0;
+
+        orderData.items.push({
+            name: item.product.item_description,
+            quantity: item.quantity,
+            price: price
+        });
+    }
+
+    // If Google Apps Script URL is configured, use it
+    if (ORDERS_SCRIPT_URL && ORDERS_SCRIPT_URL !== 'YOUR_ORDERS_SCRIPT_URL_HERE') {
+        submitToGoogleSheet(orderData);
+    } else {
+        // Fallback to EmailJS if available
+        submitViaEmailJS(orderData);
+    }
+}
+
+function submitToGoogleSheet(orderData) {
+    // Show loading state
+    const submitButton = document.getElementById('confirmSubmit');
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Submitting...';
+    submitButton.disabled = true;
+
+    fetch(ORDERS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Required for Google Apps Script
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(() => {
+        // With no-cors, we can't read the response, but if no error, assume success
+        alert('Order submitted successfully! You will receive a confirmation email shortly.');
+        resetForm();
+        closeModal();
+    })
+    .catch(error => {
+        console.error('Order submission error:', error);
+        // Try EmailJS as fallback
+        submitViaEmailJS(orderData);
+    })
+    .finally(() => {
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+    });
+}
+
+function submitViaEmailJS(orderData) {
+    // Build order details string for EmailJS
     let orderDetails = `Customer Information:\n`;
-    orderDetails += `Name: ${customerName}\n`;
-    orderDetails += `Email: ${customerEmail}\n`;
-    orderDetails += `Phone: ${customerPhone}\n`;
-    orderDetails += `Method: ${deliveryOption.checked ? 'Delivery ($20.00)' : 'Shipping (Call for Cost)'}\n\n`;
+    orderDetails += `Name: ${orderData.customerName}\n`;
+    orderDetails += `Email: ${orderData.customerEmail}\n`;
+    orderDetails += `Phone: ${orderData.customerPhone}\n`;
+    orderDetails += `Method: ${orderData.deliveryMethod === 'delivery' ? 'Delivery ($20.00)' : 'Shipping (Call for Cost)'}\n\n`;
 
     orderDetails += `Order Items:\n`;
     orderDetails += `----------------------------------------\n`;
 
     let subtotal = 0;
-    for (let key in orderItems) {
-        const item = orderItems[key];
-        const price = parseFloat(item.product.retail) || 0;
-        const total = price * item.quantity;
+    orderData.items.forEach(item => {
+        const total = item.price * item.quantity;
         subtotal += total;
-
-        orderDetails += `${item.product.item_description}\n`;
-        orderDetails += `Quantity: ${item.quantity} @ $${price.toFixed(2)} each = $${total.toFixed(2)}\n`;
+        orderDetails += `${item.name}\n`;
+        orderDetails += `Quantity: ${item.quantity} @ $${item.price.toFixed(2)} each = $${total.toFixed(2)}\n`;
         orderDetails += `----------------------------------------\n`;
-    }
+    });
 
     orderDetails += `\nSubtotal: $${subtotal.toFixed(2)}\n`;
 
     let finalTotal = subtotal;
-    if (deliveryOption.checked) {
+    if (orderData.deliveryMethod === 'delivery') {
         orderDetails += `Delivery: $20.00\n`;
         finalTotal += 20;
         orderDetails += `Order Total: $${finalTotal.toFixed(2)}`;
@@ -474,27 +538,36 @@ function submitOrder() {
     }
 
     const emailParams = {
-        to_email: customerEmail,
-        from_name: customerName,
-        from_email: customerEmail,
-        phone: customerPhone,
-        delivery_method: deliveryOption.checked ? 'Delivery' : 'Shipping',
+        to_email: orderData.customerEmail,
+        from_name: orderData.customerName,
+        from_email: orderData.customerEmail,
+        phone: orderData.customerPhone,
+        delivery_method: orderData.deliveryMethod === 'delivery' ? 'Delivery' : 'Shipping',
         order_details: orderDetails,
-        total: deliveryOption.checked ? finalTotal.toFixed(2) : 'Call for Total'
+        total: orderData.deliveryMethod === 'delivery' ? finalTotal.toFixed(2) : 'Call for Total'
     };
 
-    emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', emailParams)
-        .then(function(response) {
-            alert('Order submitted successfully! You will receive a confirmation email shortly.');
-            resetForm();
-            closeModal();
-        }, function(error) {
-            console.log('EmailJS error:', error);
-            downloadOrderAsCSV();
-            alert('Order saved locally. Please send the downloaded file to the administrator.');
-            resetForm();
-            closeModal();
-        });
+    // Check if EmailJS is configured
+    if (typeof emailjs !== 'undefined' && emailjs) {
+        emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', emailParams)
+            .then(function(response) {
+                alert('Order submitted successfully! You will receive a confirmation email shortly.');
+                resetForm();
+                closeModal();
+            }, function(error) {
+                console.log('EmailJS error:', error);
+                downloadOrderAsCSV();
+                alert('Order saved locally. Please send the downloaded file to the administrator.');
+                resetForm();
+                closeModal();
+            });
+    } else {
+        // If no email service configured, just download CSV
+        downloadOrderAsCSV();
+        alert('Order saved locally. Please send the downloaded file to the administrator.');
+        resetForm();
+        closeModal();
+    }
 }
 
 function downloadOrderAsCSV() {
