@@ -172,10 +172,13 @@ function getImageUrl(imageValue) {
     // For GitHub Pages, we need to use known image mappings
     // since we can't list directory contents dynamically
     const knownImages = [
-        'Cowboy-1032559452967040740.jpg',
-        'Filet-Cooked1032559453013728262.jpg',
-        'Ribeye-Grill-2-1032559452813774017.jpg',
-        'Strip-Grill-1032559453044431669.jpg'
+        'ChickenFajitas.jpg',
+        'Cowboy.jpg',
+        'Filet.jpg',
+        'Ribeye.jpg',
+        'Sirloin.jpg',
+        'SteakFajitas.jpg',
+        'Strip.jpg'
     ];
 
     // Find first image that contains the tag (case-insensitive)
