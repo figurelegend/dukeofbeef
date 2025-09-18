@@ -163,95 +163,49 @@ function getImageUrl(imageValue) {
         }
     }
 
-    // Check cache first
-    const tag = imageValue.toLowerCase();
-    if (imageCache[tag]) {
-        return imageCache[tag];
-    }
-
-    // For GitHub Pages, we need to use known image mappings
-    // since we can't list directory contents dynamically
-    const knownImages = [
-        'ChickenFajitas.jpg',
-        'Cowboy.jpg',
-        'Filet.jpg',
-        'Ribeye.jpg',
-        'Sirloin.jpg',
-        'SteakFajitas.jpg',
-        'Strip.jpg'
-    ];
-
-    // Special mappings for common variations
-    const specialMappings = {
-        'skirt': 'SteakFajitas.jpg',
-        'skirt steak': 'SteakFajitas.jpg',
-        'marinated skirt': 'SteakFajitas.jpg',
-        'chicken': 'ChickenFajitas.jpg',
-        'chicken fajita': 'ChickenFajitas.jpg',
-        'chicken fajitas': 'ChickenFajitas.jpg',
-        'fajitas': 'ChickenFajitas.jpg',
-        'steak fajitas': 'SteakFajitas.jpg',
-        'beef fajitas': 'SteakFajitas.jpg'
-    };
-
-    // Check special mappings first
-    if (specialMappings[tag]) {
-        const url = `images/${specialMappings[tag]}`;
-        imageCache[tag] = url;
-        return url;
-    }
-
-    // Find first image that contains the tag (case-insensitive)
-    const matchedImage = knownImages.find(img =>
-        img.toLowerCase().includes(tag)
-    );
-
-    if (matchedImage) {
-        const url = `images/${matchedImage}`;
-        imageCache[tag] = url;
-        return url;
-    }
-
-    // Try exact filename matches as fallback
-    return `images/${tag}.jpg`;
+    // Simple approach: just try the tag with .jpg extension
+    // The loadProductImage function will handle trying other extensions if needed
+    return `images/${imageValue}.jpg`;
 }
 
 // Enhanced image loading with multiple attempts
 function loadProductImage(imgElement, imageValue, productName) {
-    const tag = imageValue?.toLowerCase() || '';
+    if (!imageValue) {
+        imgElement.src = 'images/placeholder.png';
+        return;
+    }
 
-    // List of patterns to try
-    const patterns = [
-        () => getImageUrl(imageValue),  // Try our smart matching first
-        () => `images/${tag}.jpg`,
-        () => `images/${tag}.png`,
-        () => `images/${tag.charAt(0).toUpperCase() + tag.slice(1)}.jpg`,  // Capitalized
-        () => 'images/placeholder.png'
-    ];
+    // If it's a URL or already has extension, use directly
+    if (imageValue.includes('http') || imageValue.includes('.')) {
+        imgElement.src = getImageUrl(imageValue);
+        return;
+    }
 
+    // Try different extensions in order
+    const extensions = ['.jpg', '.jpeg', '.png'];
     let attemptIndex = 0;
 
-    function tryNextPattern() {
-        if (attemptIndex < patterns.length) {
-            const url = patterns[attemptIndex]();
+    function tryNextExtension() {
+        if (attemptIndex < extensions.length) {
+            const url = `images/${imageValue}${extensions[attemptIndex]}`;
             attemptIndex++;
 
             // Create a test image to check if it loads
             const testImg = new Image();
             testImg.onload = () => {
                 imgElement.src = url;
-                if (tag && !imageCache[tag]) {
-                    imageCache[tag] = url;
-                }
             };
             testImg.onerror = () => {
-                tryNextPattern();
+                tryNextExtension();
             };
             testImg.src = url;
+        } else {
+            // If none work, use placeholder
+            imgElement.src = 'images/placeholder.png';
         }
     }
 
-    tryNextPattern();
+    tryNextExtension();
 }
 
 function attachQuantityListeners() {
