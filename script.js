@@ -181,6 +181,26 @@ function getImageUrl(imageValue) {
         'Strip.jpg'
     ];
 
+    // Special mappings for common variations
+    const specialMappings = {
+        'skirt': 'SteakFajitas.jpg',
+        'skirt steak': 'SteakFajitas.jpg',
+        'marinated skirt': 'SteakFajitas.jpg',
+        'chicken': 'ChickenFajitas.jpg',
+        'chicken fajita': 'ChickenFajitas.jpg',
+        'chicken fajitas': 'ChickenFajitas.jpg',
+        'fajitas': 'ChickenFajitas.jpg',
+        'steak fajitas': 'SteakFajitas.jpg',
+        'beef fajitas': 'SteakFajitas.jpg'
+    };
+
+    // Check special mappings first
+    if (specialMappings[tag]) {
+        const url = `images/${specialMappings[tag]}`;
+        imageCache[tag] = url;
+        return url;
+    }
+
     // Find first image that contains the tag (case-insensitive)
     const matchedImage = knownImages.find(img =>
         img.toLowerCase().includes(tag)
