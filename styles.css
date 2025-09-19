@@ -315,7 +315,7 @@ main {
 .order-sidebar {
     position: fixed;
     bottom: 20px;
-    right: 50px;
+    right: 20px;
     width: 280px;
     background-color: var(--secondary-bg);
     border-radius: 8px;
