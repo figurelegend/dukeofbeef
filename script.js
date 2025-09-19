@@ -2,18 +2,25 @@
 let products = [];
 let orderItems = {};
 
-// Replace with your Google Apps Script Web App URLs
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzz7wm_ak0zOuFecSrry0A61Os7Ba0NwiHKFy-GLTQXLGD4BRWi_wCoMvV8t_8DlV3o/exec';
+// Pricing script URL
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrj_hPkJ0hHEPAksfsUYAcTGSPLvSzQHOGA2FA95WwKm4CcBmjUnIU0KgT0DNImT1u/exec';
 
-// Orders submission script URL (you'll create and deploy this separately)
-const ORDERS_SCRIPT_URL = 'YOUR_ORDERS_SCRIPT_URL_HERE';
+// Orders submission script URL
+const ORDERS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_C7AG1JuvlH09LG1wHgOAgB_dJbVgkJHgTVGSZvh--IFnuupPOrqMo6rbn4U4MESM/exec';
 
 document.addEventListener('DOMContentLoaded', function() {
     emailjs.init("YOUR_EMAILJS_PUBLIC_KEY");
 
-    document.getElementById('fullName').addEventListener('blur', validateName);
+    document.getElementById('firstName').addEventListener('blur', validateFirstName);
+    document.getElementById('lastName').addEventListener('blur', validateLastName);
     document.getElementById('email').addEventListener('blur', validateEmail);
     document.getElementById('phone').addEventListener('blur', validatePhone);
+
+    // Add input event listeners for real-time validation check
+    document.getElementById('firstName').addEventListener('input', checkFormValidity);
+    document.getElementById('lastName').addEventListener('input', checkFormValidity);
+    document.getElementById('email').addEventListener('input', checkFormValidity);
+    document.getElementById('phone').addEventListener('input', checkFormValidity);
     document.getElementById('submitOrder').addEventListener('click', showConfirmation);
     document.getElementById('confirmSubmit').addEventListener('click', submitOrder);
     document.getElementById('cancelSubmit').addEventListener('click', closeModal);
@@ -23,6 +30,21 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('deliveryOption').addEventListener('change', updateOrderTotal);
     document.getElementById('shippingOption').addEventListener('change', updateOrderTotal);
 
+    // Header scroll behavior
+    let lastScrollTop = 0;
+    const header = document.getElementById('mainHeader');
+
+    window.addEventListener('scroll', function() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+        if (scrollTop > 100) {
+            header.classList.add('collapsed');
+        } else {
+            header.classList.remove('collapsed');
+        }
+
+        lastScrollTop = scrollTop;
+    });
 
     loadProductsFromPrivateSheet();
 });
@@ -313,12 +335,27 @@ function updateOrderTotal() {
     }
 }
 
-function validateName() {
-    const nameInput = document.getElementById('fullName');
-    const errorSpan = document.getElementById('nameError');
+function validateFirstName() {
+    const nameInput = document.getElementById('firstName');
+    const errorSpan = document.getElementById('firstNameError');
 
     if (nameInput.value.trim().length < 2) {
-        errorSpan.textContent = 'Please enter your full name';
+        errorSpan.textContent = 'Please enter your first name';
+        nameInput.classList.add('invalid');
+        return false;
+    }
+
+    errorSpan.textContent = '';
+    nameInput.classList.remove('invalid');
+    return true;
+}
+
+function validateLastName() {
+    const nameInput = document.getElementById('lastName');
+    const errorSpan = document.getElementById('lastNameError');
+
+    if (nameInput.value.trim().length < 2) {
+        errorSpan.textContent = 'Please enter your last name';
         nameInput.classList.add('invalid');
         return false;
     }
@@ -362,16 +399,17 @@ function validatePhone() {
 }
 
 function checkFormValidity() {
-    const isNameValid = document.getElementById('fullName').value.trim().length >= 2;
+    const isFirstNameValid = document.getElementById('firstName').value.trim().length >= 2;
+    const isLastNameValid = document.getElementById('lastName').value.trim().length >= 2;
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById('email').value);
     const isPhoneValid = document.getElementById('phone').value.replace(/\D/g, '').length >= 10;
     const hasItems = Object.keys(orderItems).length > 0;
 
-    document.getElementById('submitOrder').disabled = !(isNameValid && isEmailValid && isPhoneValid && hasItems);
+    document.getElementById('submitOrder').disabled = !(isFirstNameValid && isLastNameValid && isEmailValid && isPhoneValid && hasItems);
 }
 
 function showConfirmation() {
-    if (!validateName() || !validateEmail() || !validatePhone()) {
+    if (!validateFirstName() || !validateLastName() || !validateEmail() || !validatePhone()) {
         alert('Please fill in all required fields correctly.');
         return;
     }
@@ -388,7 +426,9 @@ function showConfirmation() {
     const details = document.getElementById('confirmationDetails');
 
     let orderHtml = '<h3>Customer Information</h3>';
-    orderHtml += `<p><strong>Name:</strong> ${document.getElementById('fullName').value}</p>`;
+    const firstName = document.getElementById('firstName').value;
+    const lastName = document.getElementById('lastName').value;
+    orderHtml += `<p><strong>Name:</strong> ${firstName} ${lastName}</p>`;
     orderHtml += `<p><strong>Email:</strong> ${document.getElementById('email').value}</p>`;
     orderHtml += `<p><strong>Phone:</strong> ${document.getElementById('phone').value}</p>`;
 
@@ -437,7 +477,9 @@ function closeModal() {
 }
 
 function submitOrder() {
-    const customerName = document.getElementById('fullName').value;
+    const firstName = document.getElementById('firstName').value;
+    const lastName = document.getElementById('lastName').value;
+    const customerName = `${firstName} ${lastName}`;
     const customerEmail = document.getElementById('email').value;
     const customerPhone = document.getElementById('phone').value;
     const deliveryOption = document.getElementById('deliveryOption');
@@ -571,7 +613,9 @@ function submitViaEmailJS(orderData) {
 }
 
 function downloadOrderAsCSV() {
-    const customerName = document.getElementById('fullName').value;
+    const firstName = document.getElementById('firstName').value;
+    const lastName = document.getElementById('lastName').value;
+    const customerName = `${firstName} ${lastName}`;
     const customerEmail = document.getElementById('email').value;
     const customerPhone = document.getElementById('phone').value;
     const timestamp = new Date().toISOString();

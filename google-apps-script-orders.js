@@ -11,10 +11,10 @@
 // ===== CONFIGURATION =====
 const CONFIG = {
   // Your Orders Sheet ID (create a new sheet for orders)
-  ORDERS_SHEET_ID: 'YOUR_ORDERS_SHEET_ID_HERE',
+  ORDERS_SHEET_ID: '1D7FbAN5luoNn1lFmVpX-HEK1eL5dg0cqastdh2wq7Eo',
 
   // Email settings
-  ORDER_PROCESSING_EMAIL: 'orders@dukeofbeef.com', // Your business email
+  ORDER_PROCESSING_EMAIL: 'dukeofbeef@gmail.com', // Your business email
   BUSINESS_NAME: 'Duke of Beef',
 
   // Sheet configuration
@@ -72,11 +72,15 @@ function writeOrderToSheet(orderData) {
     const headers = [
       'Order ID',
       'Date/Time',
-      'Customer Name',
+      'First Name',
+      'Last Name',
       'Email',
       'Phone',
       'Delivery Method',
-      'Items',
+      'Item Name',
+      'Quantity',
+      'Price Each',
+      'Item Total',
       'Subtotal',
       'Delivery Fee',
       'Total',
@@ -88,14 +92,34 @@ function writeOrderToSheet(orderData) {
     sheet = newSheet;
   }
 
-  // Generate order ID
-  const orderId = 'ORD-' + Date.now();
+  // Generate sequential order ID with delivery/shipping prefix
+  const lastRow = sheet.getLastRow();
+  let orderNumber = 1;
+
+  // If there are existing orders, find the highest order number
+  if (lastRow > 1) {
+    const lastOrderData = sheet.getRange(lastRow, 1).getValue(); // Get last Order ID
+    if (lastOrderData && typeof lastOrderData === 'string') {
+      // Extract number from both D- and S- prefixed orders
+      const match = lastOrderData.match(/[DS]-(\d+)/);
+      if (match) {
+        const lastNumber = parseInt(match[1]);
+        if (!isNaN(lastNumber)) {
+          orderNumber = lastNumber + 1;
+        }
+      }
+    }
+  }
+
+  // Use D- for delivery, S- for shipping
+  const prefix = orderData.deliveryMethod === 'delivery' ? 'D-' : 'S-';
+  const orderId = prefix + orderNumber.toString().padStart(4, '0'); // D-0001, S-0002, etc.
   const timestamp = new Date().toLocaleString();
 
-  // Format items for spreadsheet
-  const itemsList = orderData.items.map(item =>
-    `${item.name} (${item.quantity} @ $${item.price})`
-  ).join('; ');
+  // Split customer name into first and last name
+  const nameParts = orderData.customerName.split(' ');
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.slice(1).join(' ') || '';
 
   // Calculate totals
   const subtotal = orderData.items.reduce((sum, item) =>
@@ -104,22 +128,51 @@ function writeOrderToSheet(orderData) {
   const deliveryFee = orderData.deliveryMethod === 'delivery' ? 20 : 0;
   const total = subtotal + deliveryFee;
 
-  // Add row to sheet
-  const newRow = [
+  // Add one row for each item
+  orderData.items.forEach((item, index) => {
+    const itemTotal = item.quantity * item.price;
+
+    const itemRow = [
+      orderId,
+      timestamp,
+      firstName,
+      lastName,
+      orderData.customerEmail,
+      orderData.customerPhone,
+      orderData.deliveryMethod,
+      item.name,
+      item.quantity,
+      item.price.toFixed(2),
+      itemTotal.toFixed(2),
+      '', // Subtotal - empty for item rows
+      '', // Delivery Fee - empty for item rows
+      '', // Total - empty for item rows
+      'New' // Status for all item rows
+    ];
+
+    sheet.appendRow(itemRow);
+  });
+
+  // Add summary row
+  const summaryRow = [
     orderId,
     timestamp,
-    orderData.customerName,
+    firstName,
+    lastName,
     orderData.customerEmail,
     orderData.customerPhone,
     orderData.deliveryMethod,
-    itemsList,
-    subtotal.toFixed(2),
-    deliveryFee.toFixed(2),
-    total.toFixed(2),
-    'New'
+    'ORDER TOTAL', // Item Name
+    '', // Quantity - empty for summary row
+    '', // Price Each - empty for summary row
+    '', // Item Total - empty for summary row
+    subtotal.toFixed(2), // Subtotal
+    deliveryFee.toFixed(2), // Delivery Fee
+    total.toFixed(2), // Total
+    'New' // Status for summary row
   ];
 
-  sheet.appendRow(newRow);
+  sheet.appendRow(summaryRow);
 
   return orderId;
 }

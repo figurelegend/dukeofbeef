@@ -4,14 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Form</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Diplomata+SC&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Duke of Beef</h1>
-            <h4><em>Meat Fit For Royalty</em></h4>
+        <header id="mainHeader">
+            <div class="header-content">
+                <img src="images/Logo.jpg" alt="Duke of Beef Logo" class="logo">
+                <h1>Duke of Beef</h1>
+                <h4><em>Meat Fit For Royalty</em></h4>
+            </div>
         </header>
 
         <main>
@@ -19,9 +25,15 @@
                 <h2>Customer Information</h2>
                 <form id="orderForm">
                     <div class="form-group">
-                        <label for="fullName">Full Name *</label>
-                        <input type="text" id="fullName" name="fullName" required>
-                        <span class="error-message" id="nameError"></span>
+                        <label for="firstName">First Name *</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                        <span class="error-message" id="firstNameError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName">Last Name *</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                        <span class="error-message" id="lastNameError"></span>
                     </div>
 
                     <div class="form-group">
