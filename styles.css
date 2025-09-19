@@ -313,16 +313,16 @@ main {
 }
 
 .order-sidebar {
-    position: sticky;
-    top: 95px;
-    width: 100%;
+    position: fixed;
+    bottom: 20px;
+    right: 50px;
+    width: 280px;
     background-color: var(--secondary-bg);
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     padding: 20px;
     z-index: 100;
     border: 1px solid var(--border-color);
-    margin-top: 320px;
 }
 
 .order-total {
