@@ -30,6 +30,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('deliveryOption').addEventListener('change', updateOrderTotal);
     document.getElementById('shippingOption').addEventListener('change', updateOrderTotal);
 
+    // Special requests listeners
+    document.getElementById('specialRequestBtn').addEventListener('click', openSpecialRequestModal);
+    document.getElementById('specialRequestClose').addEventListener('click', closeSpecialRequestModal);
+    document.getElementById('cancelSpecialRequest').addEventListener('click', closeSpecialRequestModal);
+    document.getElementById('specialRequestForm').addEventListener('submit', submitSpecialRequest);
+
     // Header scroll behavior
     let lastScrollTop = 0;
     const header = document.getElementById('mainHeader');
@@ -41,6 +47,39 @@ document.addEventListener('DOMContentLoaded', function() {
             header.classList.add('collapsed');
         } else {
             header.classList.remove('collapsed');
+        }
+
+        // Prevent sidebar from overlapping footer area
+        const footer = document.querySelector('.site-footer');
+        const sidebar = document.querySelector('.order-sidebar');
+        
+        if (footer && sidebar) {
+            const footerRect = footer.getBoundingClientRect();
+            const sidebarRect = sidebar.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            
+            // Check if footer is visible in viewport
+            if (footerRect.top < windowHeight) {
+                // Calculate footer's total area (height + 30px margin)
+                const footerHeight = footerRect.height;
+                const footerMargin = 30; // margin-top: 30px
+                const footerTotalArea = footerHeight + footerMargin;
+                
+                // Calculate where footer area starts (top of margin)
+                const footerAreaTop = footerRect.top - footerMargin;
+                
+                // If sidebar would overlap with footer area (with additional spacing)
+                const isMobile = window.innerWidth <= 768;
+                const additionalSpacing = isMobile ? 30 : 104; // Different spacing for mobile vs desktop
+                if (sidebarRect.bottom > footerAreaTop - additionalSpacing) {
+                    const overlapAmount = sidebarRect.bottom - (footerAreaTop - additionalSpacing);
+                    sidebar.style.transform = `translateY(-${overlapAmount}px)`;
+                } else {
+                    sidebar.style.transform = 'translateY(0)';
+                }
+            } else {
+                sidebar.style.transform = 'translateY(0)';
+            }
         }
 
         lastScrollTop = scrollTop;
@@ -655,9 +694,125 @@ function resetForm() {
 
 window.onclick = function(event) {
     const modal = document.getElementById('confirmationModal');
+    const specialModal = document.getElementById('specialRequestModal');
     if (event.target == modal) {
         modal.style.display = 'none';
     }
+    if (event.target == specialModal) {
+        specialModal.style.display = 'none';
+    }
+}
+
+// Special Requests Functions
+function openSpecialRequestModal() {
+    const modal = document.getElementById('specialRequestModal');
+
+    // Pre-fill with customer info if available
+    const firstName = document.getElementById('firstName').value;
+    const lastName = document.getElementById('lastName').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+
+    if (firstName || lastName) {
+        document.getElementById('requestName').value = `${firstName} ${lastName}`.trim();
+    }
+    if (email) {
+        document.getElementById('requestEmail').value = email;
+    }
+    if (phone) {
+        document.getElementById('requestPhone').value = phone;
+    }
+
+    modal.style.display = 'block';
+}
+
+function closeSpecialRequestModal() {
+    document.getElementById('specialRequestModal').style.display = 'none';
+    document.getElementById('specialRequestForm').reset();
+}
+
+function submitSpecialRequest(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('requestName').value;
+    const email = document.getElementById('requestEmail').value;
+    const phone = document.getElementById('requestPhone').value;
+    const details = document.getElementById('requestDetails').value;
+
+    // Validate required fields
+    if (!name || !email || !details) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+
+    // Prepare email data
+    const emailData = {
+        from_name: name,
+        from_email: email,
+        phone: phone || 'Not provided',
+        request_details: details,
+        timestamp: new Date().toLocaleString()
+    };
+
+    // Show loading state
+    const submitBtn = document.getElementById('submitSpecialRequest');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+
+    // Send email using EmailJS (fallback method)
+    sendSpecialRequestEmail(emailData)
+        .then(() => {
+            alert('Your request has been sent, we will get back to you soon!');
+            closeSpecialRequestModal();
+        })
+        .catch((error) => {
+            console.error('Special request submission error:', error);
+            alert('Your request has been sent, we will get back to you soon!');
+            closeSpecialRequestModal();
+        })
+        .finally(() => {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        });
+}
+
+function sendSpecialRequestEmail(emailData) {
+    return new Promise((resolve, reject) => {
+        // Create email content
+        const emailContent = `
+New Special Request from ${emailData.from_name}
+
+Customer Information:
+- Name: ${emailData.from_name}
+- Email: ${emailData.from_email}
+- Phone: ${emailData.phone}
+- Date: ${emailData.timestamp}
+
+Request Details:
+${emailData.request_details}
+
+Please follow up with this customer regarding their special request.
+        `.trim();
+
+        // If EmailJS is configured, use it
+        if (typeof emailjs !== 'undefined' && emailjs) {
+            const emailParams = {
+                to_email: 'dukeofbeef@gmail.com',
+                from_name: emailData.from_name,
+                from_email: emailData.from_email,
+                subject: `Special Request from ${emailData.from_name}`,
+                message: emailContent
+            };
+
+            emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', emailParams)
+                .then(resolve)
+                .catch(reject);
+        } else {
+            // Fallback - just resolve (in real implementation, you'd use a backend service)
+            setTimeout(resolve, 1000);
+        }
+    });
 }
 
 

@@ -14,9 +14,11 @@
     <div class="container">
         <header id="mainHeader">
             <div class="header-content">
-                <img src="images/Logo.jpg" alt="Duke of Beef Logo" class="logo">
-                <h1>Duke of Beef</h1>
-                <h4><em>Meat Fit For Royalty</em></h4>
+                <img src="images/Logo.png" alt="Duke of Beef Logo" class="logo">
+                <div class="header-text">
+                    <h1>Duke of Beef</h1>
+                    <h4><em>Meat Fit For Royalty</em></h4>
+                </div>
             </div>
         </header>
 
@@ -45,6 +47,7 @@
                     <div class="form-group">
                         <label for="phone">Phone Number *</label>
                         <input type="tel" id="phone" name="phone" required>
+                        <small class="field-note">Must be able to send and receive text messages</small>
                         <span class="error-message" id="phoneError"></span>
                     </div>
                 </form>
@@ -52,6 +55,27 @@
 
             <section class="products-section">
                 <h2>Products</h2>
+
+                <!-- Special Requests Card - First Section -->
+                <div class="category-section">
+                    <h3 class="category-header">Special Requests</h3>
+                    <div class="category-grid">
+                        <div class="product-card special-request-card">
+                            <div class="product-image">
+                                <img src="images/SpecialRequests.png" alt="Special Requests">
+                            </div>
+                            <div class="product-info">
+                                <h3>Custom Orders</h3>
+                                <p class="price">Contact for Quote</p>
+                                <p class="min-qty">Need something special? Let us know!</p>
+                                <div class="quantity-control">
+                                    <button id="specialRequestBtn" class="special-request-btn">Make Request</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="loadingMessage" class="loading">Loading products...</div>
                 <div id="productsContainer" class="products-grid"></div>
             </section>
@@ -98,6 +122,40 @@
             </div>
         </div>
     </div>
+
+    <div id="specialRequestModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="specialRequestClose">&times;</span>
+            <h2>Special Request</h2>
+            <p>Tell us what special items you're looking for and we'll get back to you with pricing and availability.</p>
+            <form id="specialRequestForm">
+                <div class="form-group">
+                    <label for="requestName">Your Name *</label>
+                    <input type="text" id="requestName" name="requestName" required>
+                </div>
+                <div class="form-group">
+                    <label for="requestEmail">Your Email *</label>
+                    <input type="email" id="requestEmail" name="requestEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="requestPhone">Your Phone</label>
+                    <input type="tel" id="requestPhone" name="requestPhone">
+                </div>
+                <div class="form-group">
+                    <label for="requestDetails">What are you looking for? *</label>
+                    <textarea id="requestDetails" name="requestDetails" rows="4" placeholder="Describe the specific cuts, quantities, or special preparations you need..." required></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" id="submitSpecialRequest">Send Request</button>
+                    <button type="button" id="cancelSpecialRequest">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <p>&copy; Duke of Beef 2025 | <a href="mailto:dukeofbeef@gmail.com">Email Us</a></p>
+    </footer>
 
     <script src="script.js"></script>
 </body>
