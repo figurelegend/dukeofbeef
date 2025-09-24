@@ -603,6 +603,52 @@ main {
     background-color: #5a6268;
 }
 
+/* Phone Call Card Styling */
+.phone-call-card {
+    border: 2px solid var(--old-gold);
+}
+
+.phone-call-card:hover {
+    border-color: #d4af37;
+    box-shadow: 0 4px 16px rgba(184, 134, 11, 0.2);
+}
+
+.phone-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--old-gold);
+}
+
+.phone-symbol {
+    font-size: 3rem;
+    color: var(--primary-bg);
+}
+
+.phone-call-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--old-gold);
+    color: var(--primary-bg);
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.phone-call-btn:hover {
+    background-color: #d4af37;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(184, 134, 11, 0.3);
+    color: var(--primary-bg);
+    text-decoration: none;
+}
+
 .site-footer {
     background-color: var(--secondary-bg);
     padding: 15px 30px;

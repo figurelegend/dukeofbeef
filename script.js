@@ -8,6 +8,9 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrj_hPkJ0hHE
 // Orders submission script URL
 const ORDERS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_C7AG1JuvlH09LG1wHgOAgB_dJbVgkJHgTVGSZvh--IFnuupPOrqMo6rbn4U4MESM/exec';
 
+// Special requests submission script URL
+const SPECIAL_REQUESTS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynfUtJbcAnvQmJBabCEyvxOm0LmiimsQ6CbmQfdX66pj8VGEVyDBYKgxfhIKdSJWzsXg/exec';
+
 document.addEventListener('DOMContentLoaded', function() {
     emailjs.init("YOUR_EMAILJS_PUBLIC_KEY");
 
@@ -539,6 +542,7 @@ function submitOrder() {
         const price = parseFloat(item.product.retail) || 0;
 
         orderData.items.push({
+            itemNumber: item.product.item_number || item.product['item number'] || 'N/A',
             name: item.product.item_description,
             quantity: item.quantity,
             price: price
@@ -601,7 +605,7 @@ function submitViaEmailJS(orderData) {
     orderData.items.forEach(item => {
         const total = item.price * item.quantity;
         subtotal += total;
-        orderDetails += `${item.name}\n`;
+        orderDetails += `${item.itemNumber} - ${item.name}\n`;
         orderDetails += `Quantity: ${item.quantity} @ $${item.price.toFixed(2)} each = $${total.toFixed(2)}\n`;
         orderDetails += `----------------------------------------\n`;
     });
@@ -760,15 +764,15 @@ function submitSpecialRequest(event) {
     submitBtn.textContent = 'Sending...';
     submitBtn.disabled = true;
 
-    // Send email using EmailJS (fallback method)
-    sendSpecialRequestEmail(emailData)
+    // Send request using Google Apps Script
+    submitSpecialRequestToGoogleSheet(emailData)
         .then(() => {
             alert('Your request has been sent, we will get back to you soon!');
             closeSpecialRequestModal();
         })
         .catch((error) => {
             console.error('Special request submission error:', error);
-            alert('Your request has been sent, we will get back to you soon!');
+            alert('There was an error sending your request. Please try again or contact us directly.');
             closeSpecialRequestModal();
         })
         .finally(() => {
@@ -777,41 +781,24 @@ function submitSpecialRequest(event) {
         });
 }
 
-function sendSpecialRequestEmail(emailData) {
+function submitSpecialRequestToGoogleSheet(requestData) {
     return new Promise((resolve, reject) => {
-        // Create email content
-        const emailContent = `
-New Special Request from ${emailData.from_name}
-
-Customer Information:
-- Name: ${emailData.from_name}
-- Email: ${emailData.from_email}
-- Phone: ${emailData.phone}
-- Date: ${emailData.timestamp}
-
-Request Details:
-${emailData.request_details}
-
-Please follow up with this customer regarding their special request.
-        `.trim();
-
-        // If EmailJS is configured, use it
-        if (typeof emailjs !== 'undefined' && emailjs) {
-            const emailParams = {
-                to_email: 'dukeofbeef@gmail.com',
-                from_name: emailData.from_name,
-                from_email: emailData.from_email,
-                subject: `Special Request from ${emailData.from_name}`,
-                message: emailContent
-            };
-
-            emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', emailParams)
-                .then(resolve)
-                .catch(reject);
-        } else {
-            // Fallback - just resolve (in real implementation, you'd use a backend service)
-            setTimeout(resolve, 1000);
-        }
+        fetch(SPECIAL_REQUESTS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Required for Google Apps Script
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(() => {
+            // With no-cors, we can't read the response, but if no error, assume success
+            resolve();
+        })
+        .catch(error => {
+            console.error('Special request submission error:', error);
+            reject(error);
+        });
     });
 }
 

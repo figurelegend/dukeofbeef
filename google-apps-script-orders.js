@@ -1,12 +1,4 @@
-// Google Apps Script for Order Processing
-// This script handles both writing orders to a sheet and sending emails
-//
-// SETUP INSTRUCTIONS:
-// 1. Create a new Google Sheet for orders
-// 2. Go to Extensions → Apps Script
-// 3. Paste this entire code
-// 4. Update the configuration below
-// 5. Deploy → New Deployment → Web app → Execute as: Me, Access: Anyone
+
 
 // ===== CONFIGURATION =====
 const CONFIG = {
@@ -77,6 +69,7 @@ function writeOrderToSheet(orderData) {
       'Email',
       'Phone',
       'Delivery Method',
+      'Item Number',
       'Item Name',
       'Quantity',
       'Price Each',
@@ -140,6 +133,7 @@ function writeOrderToSheet(orderData) {
       orderData.customerEmail,
       orderData.customerPhone,
       orderData.deliveryMethod,
+      item.itemNumber || 'N/A',
       item.name,
       item.quantity,
       item.price.toFixed(2),
@@ -162,6 +156,7 @@ function writeOrderToSheet(orderData) {
     orderData.customerEmail,
     orderData.customerPhone,
     orderData.deliveryMethod,
+    '', // Item Number - empty for summary row
     'ORDER TOTAL', // Item Name
     '', // Quantity - empty for summary row
     '', // Price Each - empty for summary row
@@ -182,6 +177,7 @@ function sendOrderEmails(orderData, orderId) {
   // Format order details for email
   const itemsHtml = orderData.items.map(item =>
     `<tr>
+      <td style="padding: 8px; border: 1px solid #ddd;">${item.itemNumber || 'N/A'}</td>
       <td style="padding: 8px; border: 1px solid #ddd;">${item.name}</td>
       <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
       <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${item.price.toFixed(2)}</td>
@@ -214,6 +210,7 @@ function sendOrderEmails(orderData, orderId) {
       <table style="width: 100%; border-collapse: collapse;">
         <thead>
           <tr style="background-color: #f0f0f0;">
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Item #</th>
             <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Item</th>
             <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Quantity</th>
             <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Price</th>
@@ -266,8 +263,8 @@ function testOrder() {
     customerPhone: "555-1234",
     deliveryMethod: "delivery",
     items: [
-      {name: "Ribeye", quantity: 2, price: 32.50},
-      {name: "Filet", quantity: 1, price: 28.00}
+      {itemNumber: "BEEF001", name: "Ribeye", quantity: 2, price: 32.50},
+      {itemNumber: "BEEF002", name: "Filet", quantity: 1, price: 28.00}
     ]
   };
 
